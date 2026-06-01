@@ -39,6 +39,11 @@ pub const RectOptions = struct {
     backgroundColor: cherry.Color,
 };
 
+fn innerRadius(outer: u32, borderA: u32, borderB: u32) u32 {
+    const inset = @max(borderA, borderB);
+    return if (inset >= outer) 0 else outer - inset;
+}
+
 pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
     var cursor = cherry.Pos{ .x = 0, .y = 0 };
     for (0..opts.size.h*opts.size.w) |i| {
@@ -48,45 +53,62 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 .y = @intCast(i / opts.size.w),
             };
         }
-        const cancelled = blk: {
+        const color: ?cherry.Color = color: {
+            // top-left
             if (cursor.x < opts.borderRadius.topLeft and cursor.y < opts.borderRadius.topLeft) {
                 const dx = opts.borderRadius.topLeft - cursor.x - 1;
                 const dy = opts.borderRadius.topLeft - cursor.y - 1;
-                break :blk dx*dx + dy*dy > opts.borderRadius.topLeft * opts.borderRadius.topLeft;
+                const distSq = dx*dx + dy*dy;
+                const outerR = opts.borderRadius.topLeft;
+                if (distSq > outerR * outerR) break :color null;
+                const innerR = innerRadius(outerR, opts.borderSize.top, opts.borderSize.left);
+                break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
             }
-            // top-right corner
+            // top-right
             if (cursor.x >= opts.size.w - opts.borderRadius.topRight and cursor.y < opts.borderRadius.topRight) {
                 const dx = cursor.x - (opts.size.w - opts.borderRadius.topRight);
                 const dy = opts.borderRadius.topRight - cursor.y - 1;
-                break :blk dx*dx + dy*dy > opts.borderRadius.topRight * opts.borderRadius.topRight;
+                const distSq = dx*dx + dy*dy;
+                const outerR = opts.borderRadius.topRight;
+                if (distSq > outerR * outerR) break :color null;
+                const innerR = innerRadius(outerR, opts.borderSize.top, opts.borderSize.right);
+                break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
             }
-            // bottom-left corner
+            // bottom-left
             if (cursor.x < opts.borderRadius.bottomLeft and cursor.y >= opts.size.h - opts.borderRadius.bottomLeft) {
                 const dx = opts.borderRadius.bottomLeft - cursor.x - 1;
                 const dy = cursor.y - (opts.size.h - opts.borderRadius.bottomLeft);
-                break :blk dx*dx + dy*dy > opts.borderRadius.bottomLeft * opts.borderRadius.bottomLeft;
+                const distSq = dx*dx + dy*dy;
+                const outerR = opts.borderRadius.bottomLeft;
+                if (distSq > outerR * outerR) break :color null;
+                const innerR = innerRadius(outerR, opts.borderSize.bottom, opts.borderSize.left);
+                break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
             }
-            // bottom-right corner
+            // bottom-right
             if (cursor.x >= opts.size.w - opts.borderRadius.bottomRight and cursor.y >= opts.size.h - opts.borderRadius.bottomRight) {
                 const dx = cursor.x - (opts.size.w - opts.borderRadius.bottomRight);
                 const dy = cursor.y - (opts.size.h - opts.borderRadius.bottomRight);
-                break :blk dx*dx + dy*dy > opts.borderRadius.bottomRight * opts.borderRadius.bottomRight;
+                const distSq = dx*dx + dy*dy;
+                const outerR = opts.borderRadius.bottomRight;
+                if (distSq > outerR * outerR) break :color null;
+                const innerR = innerRadius(outerR, opts.borderSize.bottom, opts.borderSize.right);
+                break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
             }
-            break :blk false;
-        };
-        const color = 
+
+            // Not in any corner — simple rect border check
             if (cursor.y < opts.borderSize.top
-                or cursor.y > (opts.size.h - opts.borderSize.bottom)
+                or cursor.y >= opts.size.h - opts.borderSize.bottom
                 or cursor.x < opts.borderSize.left
-                or cursor.x > (opts.size.w - opts.borderSize.right))
-                opts.borderColor
-            else opts.backgroundColor;
-        if (!cancelled) {
+                or cursor.x >= opts.size.w - opts.borderSize.right)
+                break :color opts.borderColor;
+            break :color opts.backgroundColor;
+        };
+        if (color) |c| {
             const base = ((((opts.pos.y + cursor.y) * self.size.w) + opts.pos.x + cursor.x)) * 4;
-            self.buf[base] = color.r;
-            self.buf[base+1] = color.g;
-            self.buf[base+2] = color.b;
-            self.buf[base+3] = @floor(255 * color.a);
+            self.buf[base] = c.r;
+            self.buf[base+1] = c.g;
+            self.buf[base+2] = c.b;
+            self.buf[base+3] = @floor(255 * c.a);
         }
     }
 }
