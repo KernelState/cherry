@@ -2,16 +2,19 @@
 /// function that renders anything
 const std = @import("std");
 const cherry = @import("cherry.zig");
+const TextRenderer = @import("rendering/TextRenderer.zig");
 
 buf: []u8,
+tr: TextRenderer,
 size: cherry.Rect,
 
 const PixelBuffer = @This();
 
-pub fn new(alloc: std.mem.Allocator, size: cherry.Rect) !PixelBuffer {
+pub fn new(alloc: std.mem.Allocator, size: cherry.Rect, comptime fontBytes: []const u8, fontSize: u32) !PixelBuffer {
     return .{
         .buf = try alloc.alloc(u8, 4 * size.w * size.h),
         .size = size,
+        .tr = try .init(fontBytes, fontSize),
     };
 }
 
@@ -143,20 +146,17 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
             self.buf[base] = c.r;
             self.buf[base+1] = c.g;
             self.buf[base+2] = c.b;
-            self.buf[base+3] = @intFromFloat(@round(255 * c.a));
+            self.buf[base+3] = @floor(255 * c.a);
         }
     }
 }
 
-pub fn textSize(self: *PixelBuffer, text: []const u8) cherry.Rect {
-    _ = self;
-    _ = text;
+pub fn text(self: *PixelBuffer, txt: []const u8, pos: cherry.Pos, color: cherry.Color) void {
+    self.tr.render(self, txt, pos, color);
 }
 
-pub fn renderText(self: *PixelBuffer, text: []const u8, pos: cherry.Pos) void {
-    _ = pos;
-    _ = self;
-    _ = text;
+pub fn textSize(self: *PixelBuffer, txt: []const u8) cherry.Rect {
+    return self.tr.textSize(txt);
 }
 
 pub fn calcSize(size: cherry.Rect, padding: cherry.StyleRect, border: cherry.StyleRect) cherry.Rect {
