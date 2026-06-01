@@ -200,6 +200,15 @@ pub const Event = union(enum) {
     };
 };
 
+pub const Window = struct {
+    title: []const u8,
+    //icon: cherry.Image,
+    db: *Db,
+    id: Id,
+    size: Pos,
+    position: ?Pos,
+};
+
 pub const Widget = struct {
     data: *anyopaque,
     renderFn: *const fn (*anyopaque, PixelBuffer) void,
