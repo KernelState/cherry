@@ -16,6 +16,8 @@ pub fn build(b: *std.Build) void {
     });
 
     cherry.root_module.linkSystemLibrary("sdl3", .{});
+    cherry.root_module.linkSystemLibrary("freetype2", .{});
+    cherry.root_module.linkSystemLibrary("harfbuzz", .{});
     b.installArtifact(cherry);
 
     const cherry_tests = b.addTest(.{
@@ -38,7 +40,6 @@ pub fn build(b: *std.Build) void {
         }),
         .use_llvm = true,
     });
-    example.root_module.linkSystemLibrary("sdl3", .{});
     
     b.installArtifact(example);
     const exampleRun = b.addRunArtifact(example);

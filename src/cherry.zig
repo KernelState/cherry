@@ -5,7 +5,7 @@ pub const Theme = struct {
     palette: Palette,
 };
 pub const PixelBuffer = @import("PixelBuffer.zig");
-pub const VulkanRenderer = @import("VulkanRenderer.zig");
+pub const Window = @import("Window.zig");
 
 const log = std.log.scoped(.cherry);
 pub var rand = std.Random.DefaultPrng.init(1);
@@ -201,15 +201,6 @@ pub const Event = union(enum) {
         screenLock,
         pause,
     };
-};
-
-pub const Window = struct {
-    id: Id,
-    title: []const u8,
-    //icon: cherry.Image,
-    db: *Db,
-    size: Rect,
-    position: ?Pos,
 };
 
 pub const Widget = struct {

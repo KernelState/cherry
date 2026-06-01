@@ -148,6 +148,17 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
     }
 }
 
+pub fn textSize(self: *PixelBuffer, text: []const u8) cherry.Rect {
+    _ = self;
+    _ = text;
+}
+
+pub fn renderText(self: *PixelBuffer, text: []const u8, pos: cherry.Pos) void {
+    _ = pos;
+    _ = self;
+    _ = text;
+}
+
 pub fn calcSize(size: cherry.Rect, padding: cherry.StyleRect, border: cherry.StyleRect) cherry.Rect {
     return .{
         .w = size.w + padding.right + padding.left + border.left + border.right,

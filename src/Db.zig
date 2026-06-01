@@ -4,8 +4,8 @@ const cherry = @import("cherry.zig");
 arena: std.heap.ArenaAllocator,
 currentTheme: u8 = 0,
 themes: std.ArrayList(cherry.Theme) = .empty,
-widgets: std.ArrayList(cherry.Widget) = .empty,
 data: std.StringHashMapUnmanaged([]const u8) = .empty,
+windows: std.ArrayList(*cherry.Window) = .empty,
 
 pub const Node = union(enum) {
     mem: *anyopaque,
@@ -27,8 +27,8 @@ pub fn get(self: *Db, id: []const u8) *Node {
     return self.data.get(id).?;
 }
 
-pub fn addWidget(self: *Db, w: cherry.Widget) !void {
-    try self.widgets.append(self.arena.allocator(), w);
+pub fn addWindow(self: *Db, w: *cherry.Window) !void {
+    self.windows.append(w);
 }
 
 pub fn addTheme(self: *Db, theme: cherry.Theme) !void {
