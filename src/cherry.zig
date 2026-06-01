@@ -3,9 +3,10 @@ const expect = std.testing.expect;
 pub const Db = @import("Db.zig");
 pub const Theme = @import("Theme.zig");
 pub const PixelBuffer = @import("PixelBuffer.zig");
+pub const VulkanRenderer = @import("VulkanRenderer.zig");
 
 const log = std.log.scoped(.cherry);
-pub const rand = std.Random.DefaultCsprng.init(1);
+pub var rand = std.Random.DefaultPrng.init(1);
 
 pub const ColorSet = struct {
     background: ?Color,
@@ -40,8 +41,8 @@ pub const Style = struct {
     padding: StyleRect = .all(2),
     margin: StyleRect = .all(0),
     borderRadius: Radius = .all(0),
-    hover: ?Style = null,
-    press: ?Style = null,
+    hoverTint: ?Color = null,
+    pressTint: ?Color = null,
 
     pub const Radius = struct {
         topLeft: u32,
@@ -201,11 +202,11 @@ pub const Event = union(enum) {
 };
 
 pub const Window = struct {
+    id: Id,
     title: []const u8,
     //icon: cherry.Image,
     db: *Db,
-    id: Id,
-    size: Pos,
+    size: Rect,
     position: ?Pos,
 };
 

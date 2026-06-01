@@ -2,7 +2,7 @@ const std = @import("std");
 const cherry = @import("cherry.zig");
 
 arena: std.heap.ArenaAllocator,
-currentTheme: u8,
+currentTheme: u8 = 0,
 themes: std.ArrayList(cherry.Theme) = .empty,
 widgets: std.ArrayList(cherry.Widget) = .empty,
 data: std.StringHashMapUnmanaged([]const u8) = .empty,

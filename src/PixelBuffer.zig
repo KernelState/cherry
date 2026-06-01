@@ -130,7 +130,7 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
         self.buf[base]   = color.r;
         self.buf[base+1] = color.g;
         self.buf[base+2] = color.b;
-        self.buf[base+3] = color.a;
+        self.buf[base+3] = @floor(255 * color.a);
     }
 }
 
@@ -139,4 +139,8 @@ pub fn calcSize(size: cherry.Rect, padding: cherry.StyleRect, border: cherry.Sty
         .w = size.w + padding.right + padding.left + border.left + border.right,
         .h = size.h + padding.top + padding.bottom + border.bottom + border.top,
     };
+}
+
+pub fn deinit(self: *PixelBuffer, alloc: std.mem.Allocator) void {
+    alloc.free(self.buf);
 }
