@@ -44,6 +44,17 @@ fn innerRadius(outer: u32, borderA: u32, borderB: u32) u32 {
     return if (inset >= outer) 0 else outer - inset;
 }
 
+fn cornerAA(distSq: u32, outerR: u32) ?f32 {
+    const rSq = outerR * outerR;
+    if (distSq <= rSq) {
+        if (rSq - distSq >= outerR) return 1.0;
+    } else if (distSq - rSq > outerR) return null;
+    const rf = @as(f32, @floatFromInt(outerR));
+    const dist = @sqrt(@as(f32, @floatFromInt(distSq)));
+    if (dist > rf + 0.5) return null;
+    return if (dist > rf - 0.5) (rf + 0.5 - dist) else 1.0;
+}
+
 pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
     var cursor = cherry.Pos{ .x = 0, .y = 0 };
     for (0..opts.size.h*opts.size.w) |i| {
@@ -60,10 +71,15 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 const dy = opts.borderRadius.topLeft - cursor.y - 1;
                 const distSq = dx*dx + dy*dy;
                 const outerR = opts.borderRadius.topLeft;
-                if (distSq > outerR * outerR) break :color null;
-                if (cursor.x < opts.borderSize.left or cursor.y < opts.borderSize.top) break :color opts.borderColor;
+                const cov = cornerAA(distSq, outerR) orelse break :color null;
+                if (cursor.x < opts.borderSize.left or cursor.y < opts.borderSize.top) {
+                    if (cov < 1.0) { var c = opts.borderColor; c.a *= cov; break :color c; }
+                    break :color opts.borderColor;
+                }
                 const innerR = innerRadius(outerR, opts.borderSize.top, opts.borderSize.left);
-                break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
+                const color = if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
+                if (cov < 1.0) { var c = color; c.a *= cov; break :color c; }
+                break :color color;
             }
             // top-right
             if (cursor.x >= opts.size.w - opts.borderRadius.topRight and cursor.y < opts.borderRadius.topRight) {
@@ -71,10 +87,15 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 const dy = opts.borderRadius.topRight - cursor.y - 1;
                 const distSq = dx*dx + dy*dy;
                 const outerR = opts.borderRadius.topRight;
-                if (distSq > outerR * outerR) break :color null;
-                if (cursor.x >= opts.size.w - opts.borderSize.right or cursor.y < opts.borderSize.top) break :color opts.borderColor;
+                const cov = cornerAA(distSq, outerR) orelse break :color null;
+                if (cursor.x >= opts.size.w - opts.borderSize.right or cursor.y < opts.borderSize.top) {
+                    if (cov < 1.0) { var c = opts.borderColor; c.a *= cov; break :color c; }
+                    break :color opts.borderColor;
+                }
                 const innerR = innerRadius(outerR, opts.borderSize.top, opts.borderSize.right);
-                break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
+                const color = if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
+                if (cov < 1.0) { var c = color; c.a *= cov; break :color c; }
+                break :color color;
             }
             // bottom-left
             if (cursor.x < opts.borderRadius.bottomLeft and cursor.y >= opts.size.h - opts.borderRadius.bottomLeft) {
@@ -82,10 +103,15 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 const dy = cursor.y - (opts.size.h - opts.borderRadius.bottomLeft);
                 const distSq = dx*dx + dy*dy;
                 const outerR = opts.borderRadius.bottomLeft;
-                if (distSq > outerR * outerR) break :color null;
-                if (cursor.x < opts.borderSize.left or cursor.y >= opts.size.h - opts.borderSize.bottom) break :color opts.borderColor;
+                const cov = cornerAA(distSq, outerR) orelse break :color null;
+                if (cursor.x < opts.borderSize.left or cursor.y >= opts.size.h - opts.borderSize.bottom) {
+                    if (cov < 1.0) { var c = opts.borderColor; c.a *= cov; break :color c; }
+                    break :color opts.borderColor;
+                }
                 const innerR = innerRadius(outerR, opts.borderSize.bottom, opts.borderSize.left);
-                break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
+                const color = if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
+                if (cov < 1.0) { var c = color; c.a *= cov; break :color c; }
+                break :color color;
             }
             // bottom-right
             if (cursor.x >= opts.size.w - opts.borderRadius.bottomRight and cursor.y >= opts.size.h - opts.borderRadius.bottomRight) {
@@ -93,10 +119,15 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 const dy = cursor.y - (opts.size.h - opts.borderRadius.bottomRight);
                 const distSq = dx*dx + dy*dy;
                 const outerR = opts.borderRadius.bottomRight;
-                if (distSq > outerR * outerR) break :color null;
-                if (cursor.x >= opts.size.w - opts.borderSize.right or cursor.y >= opts.size.h - opts.borderSize.bottom) break :color opts.borderColor;
+                const cov = cornerAA(distSq, outerR) orelse break :color null;
+                if (cursor.x >= opts.size.w - opts.borderSize.right or cursor.y >= opts.size.h - opts.borderSize.bottom) {
+                    if (cov < 1.0) { var c = opts.borderColor; c.a *= cov; break :color c; }
+                    break :color opts.borderColor;
+                }
                 const innerR = innerRadius(outerR, opts.borderSize.bottom, opts.borderSize.right);
-                break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
+                const color = if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
+                if (cov < 1.0) { var c = color; c.a *= cov; break :color c; }
+                break :color color;
             }
 
             // Not in any corner — simple rect border check
@@ -112,7 +143,7 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
             self.buf[base] = c.r;
             self.buf[base+1] = c.g;
             self.buf[base+2] = c.b;
-            self.buf[base+3] = @floor(255 * c.a);
+            self.buf[base+3] = @intFromFloat(@round(255 * c.a));
         }
     }
 }
