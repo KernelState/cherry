@@ -14,6 +14,7 @@ texture_h: u32,
 event_buf: [10]cherry.Event,
 event_count: usize,
 initialized: bool,
+closed: bool,
 alloc: std.mem.Allocator,
 
 const VulkanRenderer = @This();
@@ -30,6 +31,7 @@ pub fn init(alloc: std.mem.Allocator) !VulkanRenderer {
         .event_buf = undefined,
         .event_count = 0,
         .initialized = false,
+        .closed = false,
     };
 }
 
@@ -91,6 +93,7 @@ pub fn pollEvents(self: *VulkanRenderer) []cherry.Event {
             c.SDL_EVENT_MOUSE_WHEEL => self.pushEvent(.{ .mouseScroll = 
                 @intFromFloat(@abs(e.wheel.y))
             }),
+            c.SDL_EVENT_QUIT => self.closed = true,
             c.SDL_EVENT_KEY_DOWN => {
                 const keycode = sdlKeyToKeycode(e.key.key) orelse continue;
                 self.pushEvent(.{ .keyPressed = keycode });
@@ -103,14 +106,12 @@ pub fn pollEvents(self: *VulkanRenderer) []cherry.Event {
 }
 
 pub fn shouldClose(self: *VulkanRenderer) bool {
+    if (self.closed) return true;
     var e: c.SDL_Event = undefined;
-    while (c.SDL_PeepEvents(&e, 1, c.SDL_GETEVENT, c.SDL_EVENT_QUIT, c.SDL_EVENT_QUIT) > 0)
+    if (c.SDL_PeepEvents(&e, 1, c.SDL_GETEVENT, c.SDL_EVENT_QUIT, c.SDL_EVENT_QUIT) > 0) {
+        self.closed = true;
         return true;
-    // also check if window was closed
-    _ = self;
-    var peek: c.SDL_Event = undefined;
-    if (c.SDL_PeepEvents(&peek, 1, c.SDL_PEEKEVENT, c.SDL_EVENT_QUIT, c.SDL_EVENT_QUIT) > 0)
-        return true;
+    }
     return false;
 }
 
@@ -159,40 +160,40 @@ fn sdlKeyToKeycode(key: c.SDL_Keycode) ?cherry.Event.Keycode {
         c.SDLK_EQUALS     => .equal,
         c.SDLK_BACKSPACE  => .backspace,
         c.SDLK_TAB        => .tab,
-        c.SDLK_q          => .q,
-        c.SDLK_w          => .w,
-        c.SDLK_e          => .e,
-        c.SDLK_r          => .r,
-        c.SDLK_t          => .t,
-        c.SDLK_y          => .y,
-        c.SDLK_u          => .u,
-        c.SDLK_i          => .i,
-        c.SDLK_o          => .o,
-        c.SDLK_p          => .p,
+        c.SDLK_Q          => .q,
+        c.SDLK_W          => .w,
+        c.SDLK_E          => .e,
+        c.SDLK_R          => .r,
+        c.SDLK_T          => .t,
+        c.SDLK_Y          => .y,
+        c.SDLK_U          => .u,
+        c.SDLK_I          => .i,
+        c.SDLK_O          => .o,
+        c.SDLK_P          => .p,
         c.SDLK_LEFTBRACKET  => .sqLParen,
         c.SDLK_RIGHTBRACKET => .sqRParen,
         c.SDLK_BACKSLASH  => .backslash,
-        c.SDLK_a          => .a,
-        c.SDLK_s          => .s,
-        c.SDLK_d          => .d,
-        c.SDLK_f          => .f,
-        c.SDLK_g          => .g,
-        c.SDLK_h          => .h,
-        c.SDLK_j          => .j,
-        c.SDLK_k          => .k,
-        c.SDLK_l          => .l,
+        c.SDLK_A          => .a,
+        c.SDLK_S          => .s,
+        c.SDLK_D          => .d,
+        c.SDLK_F          => .f,
+        c.SDLK_G          => .g,
+        c.SDLK_H          => .h,
+        c.SDLK_J          => .j,
+        c.SDLK_K          => .k,
+        c.SDLK_L          => .l,
         c.SDLK_SEMICOLON  => .colon,
         c.SDLK_APOSTROPHE => .quote,
         c.SDLK_CAPSLOCK   => .capslock,
         c.SDLK_LSHIFT     => .lshift,
         c.SDLK_RSHIFT     => .rshift,
-        c.SDLK_z          => .z,
-        c.SDLK_x          => .x,
-        c.SDLK_c          => .c,
-        c.SDLK_v          => .v,
-        c.SDLK_b          => .b,
-        c.SDLK_n          => .n,
-        c.SDLK_m          => .m,
+        c.SDLK_Z          => .z,
+        c.SDLK_X          => .x,
+        c.SDLK_C          => .c,
+        c.SDLK_V          => .v,
+        c.SDLK_B          => .b,
+        c.SDLK_N          => .n,
+        c.SDLK_M          => .m,
         c.SDLK_COMMA      => .comma,
         c.SDLK_PERIOD     => .dot,
         c.SDLK_SLASH      => .slash,

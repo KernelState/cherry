@@ -25,5 +25,14 @@ pub fn main(init: std.process.Init) !void {
         .borderSize = .all(4),
     });
     try renderer.draw(buf);
-    while (!renderer.shouldClose()) {}
+    while (!renderer.shouldClose()) {
+        for (renderer.pollEvents()) |ev| {
+            switch (ev) {
+                .keyPressed => |key| {
+                    if (key == .esc) renderer.closed = true;
+                },
+                else => {},
+            }
+        }
+    }
 }

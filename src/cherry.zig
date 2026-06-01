@@ -1,7 +1,9 @@
 const std = @import("std");
 const expect = std.testing.expect;
 pub const Db = @import("Db.zig");
-pub const Theme = @import("Theme.zig");
+pub const Theme = struct {
+    palette: Palette,
+};
 pub const PixelBuffer = @import("PixelBuffer.zig");
 pub const VulkanRenderer = @import("VulkanRenderer.zig");
 

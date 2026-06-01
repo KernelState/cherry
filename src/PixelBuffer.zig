@@ -61,6 +61,7 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 const distSq = dx*dx + dy*dy;
                 const outerR = opts.borderRadius.topLeft;
                 if (distSq > outerR * outerR) break :color null;
+                if (cursor.x < opts.borderSize.left or cursor.y < opts.borderSize.top) break :color opts.borderColor;
                 const innerR = innerRadius(outerR, opts.borderSize.top, opts.borderSize.left);
                 break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
             }
@@ -71,6 +72,7 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 const distSq = dx*dx + dy*dy;
                 const outerR = opts.borderRadius.topRight;
                 if (distSq > outerR * outerR) break :color null;
+                if (cursor.x >= opts.size.w - opts.borderSize.right or cursor.y < opts.borderSize.top) break :color opts.borderColor;
                 const innerR = innerRadius(outerR, opts.borderSize.top, opts.borderSize.right);
                 break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
             }
@@ -81,6 +83,7 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 const distSq = dx*dx + dy*dy;
                 const outerR = opts.borderRadius.bottomLeft;
                 if (distSq > outerR * outerR) break :color null;
+                if (cursor.x < opts.borderSize.left or cursor.y >= opts.size.h - opts.borderSize.bottom) break :color opts.borderColor;
                 const innerR = innerRadius(outerR, opts.borderSize.bottom, opts.borderSize.left);
                 break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
             }
@@ -91,6 +94,7 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
                 const distSq = dx*dx + dy*dy;
                 const outerR = opts.borderRadius.bottomRight;
                 if (distSq > outerR * outerR) break :color null;
+                if (cursor.x >= opts.size.w - opts.borderSize.right or cursor.y >= opts.size.h - opts.borderSize.bottom) break :color opts.borderColor;
                 const innerR = innerRadius(outerR, opts.borderSize.bottom, opts.borderSize.right);
                 break :color if (distSq <= innerR * innerR) opts.backgroundColor else opts.borderColor;
             }
