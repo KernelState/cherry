@@ -7,6 +7,7 @@ buf: *cherry.PixelBuffer,
 renderer: Renderer,
 db: *cherry.Db,
 minimized: bool = false,
+child: ?cherry.Widget = null,
 
 const Window = @This();
 
@@ -59,6 +60,7 @@ pub const Options = struct {
     //icon: cherry.Image,
     size: cherry.Rect,
     position: ?cherry.Pos,
+    transparent: bool = true,
 };
 
 pub fn init(alloc: std.mem.Allocator, buf: cherry.PixelBuffer, renderer: Renderer, opts: Options) !Window {
@@ -69,6 +71,10 @@ pub fn init(alloc: std.mem.Allocator, buf: cherry.PixelBuffer, renderer: Rendere
         .id = cherry.genId(),
     };
     self.renderer.init(alloc);
+    if (self.data.transparent) 
+        self.buf.fill(.transparent)
+    else 
+        self.buf.fill(.fromHex("000000"));
     return self;
 }
 

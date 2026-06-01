@@ -166,6 +166,16 @@ pub fn calcSize(size: cherry.Rect, padding: cherry.StyleRect, border: cherry.Sty
     };
 }
 
+pub fn fill(self: *PixelBuffer, color: cherry.Color) void {
+    for (@floor(self.buf.len/4)) |px| {
+        const base = px*4;
+        self.buf[base] = color.r;
+        self.buf[base+1] = color.g;
+        self.buf[base+2] = color.b;
+        self.buf[base+3] = color.a;
+    }
+}
+
 pub fn deinit(self: *PixelBuffer, alloc: std.mem.Allocator) void {
     alloc.free(self.buf);
 }

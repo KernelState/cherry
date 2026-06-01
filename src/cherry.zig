@@ -90,6 +90,8 @@ pub const Color = struct {
     b: u8,
     a: f32 = 1.0,
 
+    pub const transparent = Color { .r = 0, .g = 0, .b =0, .a = 0.0 };
+
     pub fn fromHex(hex: []const u8) !Color {
         var h = hex;
         if (hex[0] == '#') h = hex[1..];
