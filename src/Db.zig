@@ -42,7 +42,7 @@ pub fn themeSet(self: *Db, theme: cherry.Theme) void {
 
 pub fn getBase(self: *Db, mode: cherry.Palette.Mode) cherry.Style {
     std.debug.assert(self.themes.items.len > @as(usize, @intCast(self.currentTheme)));
-    const set: cherry.ColorSet = self.themes.items[@intCast(self.currentTheme)];
+    const set: cherry.ColorSet = self.themes.items[@intCast(self.currentTheme)].palette.colorset(mode);
     return .{
         .background = set.background,
         .borderColor = set.border,

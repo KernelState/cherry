@@ -1,8 +1,8 @@
 const std = @import("std");
 const expect = std.testing.expect;
 pub const Db = @import("Db.zig");
-pub const Widget = @import("Widget.zig");
-pub const Theme = struct {};
+pub const Theme = @import("Theme.zig");
+pub const PixelBuffer = @import("PixelBuffer.zig");
 
 const log = std.log.scoped(.cherry);
 pub const rand = std.Random.DefaultCsprng.init(1);
@@ -35,15 +35,15 @@ pub const Palette = struct {
 pub const Style = struct {
     background: ?Color = null,
     text: Color,
-    border: Rect = .all(0),
+    border: StyleRect = .all(0),
     borderColor: Color,
-    padding: Rect = .all(2),
-    margin: Rect = .all(0),
+    padding: StyleRect = .all(2),
+    margin: StyleRect = .all(0),
     borderRadius: Radius = .all(0),
     hover: ?Style = null,
     press: ?Style = null,
 
-    const Radius = struct {
+    pub const Radius = struct {
         topLeft: u32,
         topRight: u32,
         bottomLeft: u32,
@@ -65,13 +65,13 @@ pub const Pos = struct {
     y: u32,
 };
 
-pub const Rect = struct {
+pub const StyleRect = struct {
     top: u32,
     right: u32,
     left: u32,
     bottom: u32,
 
-    pub fn all(n: u32) Rect {
+    pub fn all(n: u32) StyleRect {
         return .{
             .top = n,
             .right = n,
@@ -98,6 +98,11 @@ pub const Color = struct {
             .a = 1.0,
         };
     }
+};
+
+pub const Rect = struct {
+    w: u32,
+    h: u32,
 };
 
 pub const Event = union(enum) {
@@ -193,6 +198,33 @@ pub const Event = union(enum) {
         screenLock,
         pause,
     };
+};
+
+pub const Widget = struct {
+    data: *anyopaque,
+    renderFn: *const fn (*anyopaque, PixelBuffer) void,
+    sizeFn: *const fn (*anyopaque) Rect,
+    getSpaceFn: ?*const fn (*anyopaque, Widget, Rect) PixelBuffer,
+
+    pub fn fromStruct(widget: anytype) Widget {
+        if (@hasField(@TypeOf(widget), "widgetData"))
+            return @field(widget, "widgetData");
+        @compileError("Cannot find required field for widget `widgetData`");
+    }
+
+    pub fn render(self: *Widget, buf: PixelBuffer) void {
+        self.renderFn(self.data, buf);
+    }
+
+    pub fn size(self: *Widget) Rect {
+        return self.sizeFn(self.data);
+    }
+
+    pub fn getSpace(self: *Widget, w: Widget, r: Rect) PixelBuffer {
+        if (self.getSpaceFn) |f|
+            return f(self.data, w, r);
+        std.debug.panic("Widget does not support `getSpace`");
+    }
 };
 
 pub const Id = u64;
