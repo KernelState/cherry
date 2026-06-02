@@ -176,4 +176,6 @@ pub fn run(self: *Window, alloc: std.mem.Allocator, io: std.Io) !void {
         try self.drawBuffer();
         self.swapBuffers();
     }
+
+    self.closeWindow();
 }
