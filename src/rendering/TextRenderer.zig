@@ -117,6 +117,6 @@ pub fn textSize(self: *TextRenderer, text: []const u8) cherry.Rect {
 pub fn deinit(self: *TextRenderer) void {
     c.hb_buffer_destroy(self.buf);
     c.hb_font_destroy(self.hbFont);
-    c.FT_Done_Face(self.face);
-    c.FT_Done_FreeType(self.ftLib);
+    _ = c.FT_Done_Face(self.face);
+    _ = c.FT_Done_FreeType(self.ftLib);
 }

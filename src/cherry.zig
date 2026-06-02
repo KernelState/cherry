@@ -6,6 +6,7 @@ pub const Theme = struct {
 };
 pub const PixelBuffer = @import("PixelBuffer.zig");
 pub const Window = @import("Window.zig");
+pub const renderers = @import("rendering/renderer.zig");
 
 const log = std.log.scoped(.cherry);
 pub var rand = std.Random.DefaultPrng.init(1);
@@ -90,7 +91,8 @@ pub const Color = struct {
     b: u8,
     a: f32 = 1.0,
 
-    pub const transparent = Color { .r = 0, .g = 0, .b =0, .a = 0.0 };
+    pub const transparent = Color{ .r = 0, .g = 0, .b = 0, .a = 0.0 };
+    pub const black = Color{ .r = 0, .g = 0, .b = 0, .a = 1.0 };
 
     pub fn fromHex(hex: []const u8) !Color {
         var h = hex;

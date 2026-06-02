@@ -5,7 +5,7 @@ id: cherry.Id,
 data: Options,
 buf: *cherry.PixelBuffer,
 renderer: Renderer,
-db: *cherry.Db,
+db: ?*cherry.Db = null,
 minimized: bool = false,
 child: ?cherry.Widget = null,
 
@@ -21,6 +21,11 @@ pub const Renderer = struct {
     initFn: *const fn (*anyopaque, std.mem.Allocator) anyerror!void,
     createWindowFn: *const fn (*anyopaque, *Options) anyerror!void,
     drawBufferFn: *const fn (*anyopaque, *cherry.PixelBuffer) anyerror!void,
+    swapBuffersFn: *const fn (*anyopaque) void,
+    pollEventsFn: *const fn (*anyopaque, *std.ArrayList(cherry.Event)) void,
+    setSizeFn: *const fn (*anyopaque, cherry.Rect) anyerror!void,
+    getSizeFn: *const fn (*anyopaque) cherry.Rect,
+    setTitleFn: *const fn (*anyopaque, []const u8) void,
     closeWindowFn: *const fn (*anyopaque) anyerror!void,
     shouldCloseFn: *const fn (*anyopaque) bool,
     isMinimizedFn: *const fn (*anyopaque) bool,
@@ -38,6 +43,10 @@ pub const Renderer = struct {
         return self.drawBufferFn(self.data, buf);
     }
 
+    pub fn swapBuffers(self: *Renderer) void {
+        return self.swapBuffersFn(self.data);
+    }
+
     pub fn closeWindow(self: *Renderer) !void {
         return self.closeWindowFn(self.data);
     }
@@ -50,8 +59,31 @@ pub const Renderer = struct {
         return self.isMinimizedFn(self.data);
     }
 
+    pub fn pollEvents(self: *Renderer, a: *std.ArrayList(cherry.Event)) void {
+        return self.pollEventsFn(self.data, a);
+    }
+
+    pub fn setSize(self: *Renderer, r: cherry.Rect) void {
+        return self.setSizeFn(self.data, r);
+    }
+
+    pub fn getSize(self: *Renderer) cherry.Rect {
+        return self.getSizeFn(self.data);
+    }
+
+    pub fn setTitle(self: *Renderer, title: []const u8) void {
+        return self.setTitleFn(self.data, title);
+    }
+
     pub fn deinit(self: *Renderer, alloc: std.mem.Allocator) void {
         self.deinitFn(self.data, alloc);
+    }
+
+    pub fn fromStruct(instance: anytype) Renderer {
+        const T = @TypeOf(instance);
+        if (@hasField(T, "renderer_impl"))
+            return @field(instance, "renderer_impl");
+        @compileError("Struct `" ++ @typeName(T) ++ "` does not have field `renderer_impl`");
     }
 };
 
@@ -63,29 +95,54 @@ pub const Options = struct {
     transparent: bool = true,
 };
 
-pub fn init(alloc: std.mem.Allocator, buf: cherry.PixelBuffer, renderer: Renderer, opts: Options) !Window {
+pub fn init(alloc: std.mem.Allocator, buf: *cherry.PixelBuffer, renderer: Renderer, opts: Options) !Window {
     var self = Window{
         .renderer = renderer,
         .buf = buf,
         .data = opts,
         .id = cherry.genId(),
     };
-    self.renderer.init(alloc);
-    if (self.data.transparent) 
-        self.buf.fill(.transparent)
-    else 
-        self.buf.fill(.fromHex("000000"));
+    try self.renderer.init(alloc);
+    self.buf.fill(if (self.data.transparent) .transparent else .black);
     return self;
 }
 
-pub fn createWindow(self: *Window) void {
-    self.renderer.createWindow(self.data);
+pub fn createWindow(self: *Window) !void {
+    try self.renderer.createWindow(&self.data);
 }
 
-pub fn drawBuffer(self: *Window) void {
-    self.renderer.drawBuffer(self.buf);
+pub fn drawBuffer(self: *Window) !void {
+    try self.renderer.drawBuffer(self.buf);
+}
+
+pub fn swapBuffers(self: *Window) void {
+    self.renderer.swapBuffers();
+}
+
+pub fn closeWindow(self: *Window) !void {
+    try self.renderer.closeWindow();
+}
+
+pub fn shouldClose(self: *Window) bool {
+    return self.renderer.shouldClose();
 }
 
 pub fn deinit(self: *Window, alloc: std.mem.Allocator) void {
     self.renderer.deinit(alloc);
+}
+
+pub fn setSize(self: *Window, r: cherry.Rect) !void {
+    try self.renderer.setSize(r);
+}
+
+pub fn getSize(self: *Window) cherry.Rect {
+    return self.renderer.getSize();
+}
+
+pub fn setTitle(self: *Window, title: []const u8) void {
+    self.renderer.setTitle(title);
+}
+
+pub fn pollEvents(self: *Window, a: *std.ArrayList(cherry.Event)) void {
+    self.renderer.pollEvents(a);
 }

@@ -5,30 +5,36 @@ const cherry = @import("cherry.zig");
 const TextRenderer = @import("rendering/TextRenderer.zig");
 
 buf: []u8,
-tr: TextRenderer,
+tr: ?TextRenderer = null,
 size: cherry.Rect,
 
 const PixelBuffer = @This();
 
-pub fn new(alloc: std.mem.Allocator, size: cherry.Rect, comptime fontBytes: []const u8, fontSize: u32) !PixelBuffer {
+pub fn new(alloc: std.mem.Allocator, size: cherry.Rect) !PixelBuffer {
     return .{
         .buf = try alloc.alloc(u8, 4 * size.w * size.h),
         .size = size,
-        .tr = try .init(fontBytes, fontSize),
+        .tr = null,
     };
+}
+
+pub fn newWithFont(alloc: std.mem.Allocator, size: cherry.Rect, comptime fontBytes: []const u8, fontSize: u32) !PixelBuffer {
+    var pb = try new(alloc, size);
+    pb.tr = try TextRenderer.init(fontBytes, fontSize);
+    return pb;
 }
 
 pub fn index(self: *PixelBuffer, pos: cherry.Pos) usize {
     return ((pos.y * self.size.w) + pos.x) * 4;
 }
 
-pub fn subBuffer(self: *PixelBuffer, pos: cherry.Pos, size: cherry.Rect) PixelBuffer {
+pub fn subBuffer(self: *PixelBuffer, pos: cherry.Pos, sz: cherry.Rect) PixelBuffer {
     const end = cherry.Pos{
-        .x = pos.x + size.w,
-        .y = pos.y + size.h,
+        .x = pos.x + sz.w,
+        .y = pos.y + sz.h,
     };
     return .{
-        .size = rect,
+        .size = sz,
         .buf = self.buf[index(pos)..(index(end) + 4)],
     };
 }
@@ -152,11 +158,12 @@ pub fn rect(self: *PixelBuffer, opts: RectOptions) void {
 }
 
 pub fn text(self: *PixelBuffer, txt: []const u8, pos: cherry.Pos, color: cherry.Color) void {
-    self.tr.render(self, txt, pos, color);
+    if (self.tr) |*tr| tr.render(self, txt, pos, color);
 }
 
 pub fn textSize(self: *PixelBuffer, txt: []const u8) cherry.Rect {
-    return self.tr.textSize(txt);
+    if (self.tr) |*tr| return tr.textSize(txt);
+    return .{ .w = 0, .h = 0 };
 }
 
 pub fn calcSize(size: cherry.Rect, padding: cherry.StyleRect, border: cherry.StyleRect) cherry.Rect {
@@ -167,15 +174,18 @@ pub fn calcSize(size: cherry.Rect, padding: cherry.StyleRect, border: cherry.Sty
 }
 
 pub fn fill(self: *PixelBuffer, color: cherry.Color) void {
-    for (@floor(self.buf.len/4)) |px| {
-        const base = px*4;
-        self.buf[base] = color.r;
-        self.buf[base+1] = color.g;
-        self.buf[base+2] = color.b;
-        self.buf[base+3] = color.a;
+    const a8: u8 = @intFromFloat(@floor(255.0 * color.a));
+    @memset(self.buf, 0);
+    var i: usize = 0;
+    while (i < self.buf.len) : (i += 4) {
+        self.buf[i + 0] = color.r;
+        self.buf[i + 1] = color.g;
+        self.buf[i + 2] = color.b;
+        self.buf[i + 3] = a8;
     }
 }
 
 pub fn deinit(self: *PixelBuffer, alloc: std.mem.Allocator) void {
+    if (self.tr) |*tr| tr.deinit();
     alloc.free(self.buf);
 }
