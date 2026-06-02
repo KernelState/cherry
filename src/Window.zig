@@ -8,8 +8,16 @@ renderer: Renderer,
 db: ?*cherry.Db = null,
 minimized: bool = false,
 child: ?cherry.Widget = null,
+appdata: ?*anyopaque,
+update: ?*const fn (*anyopaque, Message, std.Io, std.mem.Allocator) anyerror!void = null,
+view: ?*const fn (*const anyopaque, *cherry.PixelBuffer) void = null,
 
 const Window = @This();
+
+pub const Message = union(enum) {
+    event: cherry.Event,
+    msg: *anyopaque,
+};
 
 /// All what this does is display a pixel buffer and help manage the Window
 /// on the OS side.
@@ -145,4 +153,27 @@ pub fn setTitle(self: *Window, title: []const u8) void {
 
 pub fn pollEvents(self: *Window, a: *std.ArrayList(cherry.Event)) void {
     self.renderer.pollEvents(a);
+}
+
+pub fn run(self: *Window, alloc: std.mem.Allocator, io: std.Io) !void {
+    var buf = try cherry.PixelBuffer.new(alloc, .{ .w = 800, .h = 600 });
+    defer buf.deinit(alloc);
+
+    try self.createWindow();
+
+    var events: std.ArrayList(cherry.Event) = .empty;
+    defer events.deinit(alloc);
+
+    while (!self.shouldClose()) {
+        events.clearRetainingCapacity();
+        self.pollEvents(&events);
+
+        for (events.items) |ev| {
+            try self.update.?(self.appdata, .{ .event = ev }, io, alloc);
+        }
+
+        self.view.?(self.appdata, self.buf);
+        try self.drawBuffer();
+        self.swapBuffers();
+    }
 }

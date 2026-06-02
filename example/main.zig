@@ -37,11 +37,6 @@ pub fn main() !void {
             }
         }
 
-        const r: u8 = @intCast((frame * 2) % 256);
-        const g: u8 = @intCast((frame * 5) % 256);
-        const b: u8 = @intCast((frame * 7) % 256);
-        buf.fill(.{ .r = r, .g = g, .b = b, .a = 1.0 });
-
         try window.drawBuffer();
         window.swapBuffers();
 
