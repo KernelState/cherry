@@ -117,6 +117,7 @@ pub const Event = union(enum) {
     mouseClick: bool,
     mouseScroll: u32,
     keyPressed: Keycode,
+    windowResized: Rect,
 
     pub const Keycode = enum {
         esc,

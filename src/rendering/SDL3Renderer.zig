@@ -137,6 +137,7 @@ fn implPollEvents(data: *anyopaque, out: *std.ArrayList(cherry.Event)) void {
                     @intCast(self._size.w),
                     @intCast(self._size.h),
                 );
+                out.append(self.alloc, .{ .windowResized = self._size }) catch {};
             },
             c.SDL_EVENT_KEY_DOWN => {
                 if (mapKeycode(sdl_ev.key.key)) |kc|

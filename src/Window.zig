@@ -8,9 +8,9 @@ renderer: Renderer,
 db: ?*cherry.Db = null,
 minimized: bool = false,
 child: ?cherry.Widget = null,
-appdata: ?*anyopaque,
+appdata: ?*anyopaque = null,
 update: ?*const fn (*anyopaque, Message, std.Io, std.mem.Allocator) anyerror!void = null,
-view: ?*const fn (*const anyopaque, *cherry.PixelBuffer) void = null,
+view: ?*const fn (*const anyopaque, *cherry.PixelBuffer) anyerror!void = null,
 
 const Window = @This();
 
@@ -156,9 +156,6 @@ pub fn pollEvents(self: *Window, a: *std.ArrayList(cherry.Event)) void {
 }
 
 pub fn run(self: *Window, alloc: std.mem.Allocator, io: std.Io) !void {
-    var buf = try cherry.PixelBuffer.new(alloc, .{ .w = 800, .h = 600 });
-    defer buf.deinit(alloc);
-
     try self.createWindow();
 
     var events: std.ArrayList(cherry.Event) = .empty;
@@ -169,13 +166,17 @@ pub fn run(self: *Window, alloc: std.mem.Allocator, io: std.Io) !void {
         self.pollEvents(&events);
 
         for (events.items) |ev| {
-            try self.update.?(self.appdata, .{ .event = ev }, io, alloc);
+            switch (ev) {
+                .windowResized => |size| try self.buf.resize(alloc, size),
+                else => {},
+            }
+            try self.update.?(self.appdata.?, .{ .event = ev }, io, alloc);
         }
 
-        self.view.?(self.appdata, self.buf);
+        try self.view.?(self.appdata.?, self.buf);
         try self.drawBuffer();
         self.swapBuffers();
     }
 
-    self.closeWindow();
+    try self.closeWindow();
 }
