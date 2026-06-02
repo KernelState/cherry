@@ -30,12 +30,12 @@ pub const Renderer = struct {
         return self.initFn(self.data, alloc);
     }
 
-    pub fn createWindow(self: *Renderer, w: *Window) !void {
+    pub fn createWindow(self: *Renderer, w: *Options) !void {
         return self.createWindowFn(self.data, w);
     }
 
     pub fn drawBuffer(self: *Renderer, buf: *cherry.PixelBuffer) !void {
-        return self.createWindowFn(self.data, buf);
+        return self.drawBufferFn(self.data, buf);
     }
 
     pub fn closeWindow(self: *Renderer) !void {
